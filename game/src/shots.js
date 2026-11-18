@@ -1,6 +1,9 @@
 // Vice Harbor v2.1 — screenshot staging.
 // v2.1: rewritten under the new sealed recording; same 4 scenes as v2
 // (title, story job at the marina, Harbor Regatta, pause stats).
+// v2.2 staging fixes: the race shot stages the player 1st (rivals
+// behind, two gates already cleared) and the mission shot adds a
+// warm key light over the marina foreground so it reads bright.
 // ?shot=<name>&seed=<n> builds a deterministic scene by playing the
 // real game forward a fixed number of steps from a fixed seed, then
 // flags the page ready. Every screenshot is a genuine frame of the
@@ -8,6 +11,7 @@
 // Regatta boat race with live standings, and the pause screen with
 // the career stats and % complete.
 
+import * as THREE from 'three';
 import { startMission } from './missions.js';
 import { createCar } from './vehicles.js';
 import { createBoat } from './boats.js';
@@ -101,6 +105,16 @@ export function setupShot(G, name) {
     G.camYaw = 2.18;
     G.camPitch = 0.22;
     startMission(G, 0);
+    // v2.2: warm key + fill lights over the marina foreground — the
+    // dusk sun alone left the player and the road in front of the
+    // camera too dark in the shot. Shot-only lights; the game's own
+    // lighting is untouched.
+    const keyLight = new THREE.PointLight(0xffe9a8, 500, 100, 1.6);
+    keyLight.position.set(138, 8, -170);
+    G.scene.add(keyLight);
+    const fillLight = new THREE.PointLight(0xffd9a0, 300, 60, 1.6);
+    fillLight.position.set(132, 5, -160);
+    G.scene.add(fillLight);
     simulateSteps(G, 90);
   } else if (name === 'race') {
     // The Harbor Regatta: the player in a Wave Runner on the sea,
@@ -110,12 +124,15 @@ export function setupShot(G, name) {
     if (G.player.boat) {
       G.player.boat.speed = 26;
       G.shotInput = { forward: true };
-      // Clear the first two gates so the standings read mid-race.
+      // v2.2: stage the player LEADING — two gates already cleared
+      // (player progress 2/4 = 0.5) with the rivals behind (0.18 /
+      // 0.12 / 0.08, and they gain ~0.14 over the 150 steps, so the
+      // HUD still reads 1st of 4 at the frame).
       if (G.race) {
-        G.race.checkpoint = 1;
-        G.race.rivals[0].progress = 0.45;
-        G.race.rivals[1].progress = 0.3;
-        G.race.rivals[2].progress = 0.22;
+        G.race.checkpoint = 2;
+        G.race.rivals[0].progress = 0.18;
+        G.race.rivals[1].progress = 0.12;
+        G.race.rivals[2].progress = 0.08;
       }
       simulateSteps(G, 150);
     }
