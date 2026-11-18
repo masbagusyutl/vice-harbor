@@ -1,79 +1,92 @@
-// The screenshot scenes behind ?shot=start|play|end. Each one plays the real rules forward from a
-// fresh world for a fixed number of steps, steered by a simple autopilot (look ahead each way the
-// paddle could move, keep clear of blocks, chase the lowest coin when that is safe), so the frame
-// is what a short game really looks like and the same seed always gives the same frame.
-import { FIELD, PLAYER, STEP } from './config.js';
-import { EVENT_OVER, KIND_BLOCK } from './world.js';
-import { SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
+// Vice Harbor — screenshot staging: ?shot=<name>&seed=<n> plays the real game
+// forward a fixed number of steps from a fixed seed, so each screenshot is a
+// genuine frame of the game, not a mockup.
+import { makeCar } from './vehicles.js';
 
-const START_SECONDS = 5;
-const PLAY_SECONDS = 26;
-const END_LIMIT_SECONDS = 600;
-/**
- * How far ahead, in seconds, the autopilot checks each way it could move: the play scene's pilot
- * looks well ahead and keeps all its lives; the end scene's looks only a moment ahead, so it is
- * caught out once the blocks speed up, as a hurried player is.
- */
-const HORIZON_PLAY = 0.7;
-const HORIZON_END = 0.25;
-const SAMPLE = 1 / 30;
-const DIRECTIONS = [0, -1, 1];
-/** Extra room, each side, it keeps between the paddle and a block. */
-const MARGIN = 10;
-
-/** Seconds until moving in `direction` (-1, 0, 1) runs the paddle into a block; Infinity when it never does. */
-function timeToHit(state, direction, horizon) {
-  const player = state.player;
-  for (let t = SAMPLE; t <= horizon; t += SAMPLE) {
-    const x = Math.min(FIELD.width - player.width, Math.max(0, player.x + direction * PLAYER.speed * t));
-    for (let index = 0; index < state.items.length; index += 1) {
-      const item = state.items[index];
-      if (!item.active || item.kind !== KIND_BLOCK) continue;
-      const y = item.y + item.speed * t;
-      if (y + item.height > player.y && y < player.y + player.height && item.x < x + player.width + MARGIN && item.x + item.width > x - MARGIN) return t;
-    }
-  }
-  return Infinity;
+function setCam(game, x, y, z, lookX, lookY, lookZ) {
+  game.camera.position.set(x, y, z);
+  game.camera.lookAt(lookX, lookY, lookZ);
+  game.cameraLocked = true;
 }
 
-/** Of the safe ways to move, the one toward the lowest coin (or the centre); else the one that is hit last. */
-function autopilot(state, horizon) {
-  const player = state.player;
-  let coin = null;
-  for (let index = 0; index < state.items.length; index += 1) {
-    const item = state.items[index];
-    if (item.active && item.kind !== KIND_BLOCK && (coin === null || item.y > coin.y)) coin = item;
-  }
-  const target = coin === null ? FIELD.width / 2 : coin.x + coin.width / 2;
-  const centre = player.x + player.width / 2;
-  const wanted = target > centre + 8 ? 1 : target < centre - 8 ? -1 : 0;
-  let best = wanted;
-  let bestTime = timeToHit(state, wanted, horizon);
-  for (let index = 0; index < DIRECTIONS.length && bestTime !== Infinity; index += 1) {
-    const time = timeToHit(state, DIRECTIONS[index], horizon);
-    if (time > bestTime) {
-      bestTime = time;
-      best = DIRECTIONS[index];
-    }
-  }
-  return best;
+// Run the simulation for `steps` frames with scripted keys held down.
+function simulate(game, steps, keys) {
+  const input = game.input;
+  for (const k of keys) input.keys.add(k);
+  for (let i = 0; i < steps; i++) game.step(1 / 60, true);
+  for (const k of keys) input.keys.delete(k);
 }
 
-/**
- * Set `world` to the named scene (start, play or end; any other name is start) and return the
- * screen to draw over it and the best score to show.
- */
-export function stageShot(name, world) {
-  world.reset();
-  if (name !== 'play' && name !== 'end') {
-    for (let index = 0; index < START_SECONDS / STEP; index += 1) world.step(STEP, 0, true);
-    return { screen: SCREEN_TITLE, best: 0 };
+export function stageShot(name, game) {
+  game.mode = 'play';
+  game.hideMenus();
+  if (name === 'start') {
+    // Title screen over a wide shot from the beach: palms, boardwalk, neon downtown.
+    game.mode = 'title';
+    game.showTitle();
+    setCam(game, 205, 30, 95, -60, 8, -30);
+    game.step(1 / 60, true);
+    return;
   }
-  const limit = name === 'end' ? END_LIMIT_SECONDS : PLAY_SECONDS;
-  const horizon = name === 'end' ? HORIZON_END : HORIZON_PLAY;
-  for (let index = 0; index < limit / STEP; index += 1) {
-    if (world.step(STEP, autopilot(world.state, horizon), false) & EVENT_OVER) break;
+
+  if (name === 'chase') {
+    // COVER chase: the player in a sports car, 4 wanted stars, VHPD on their tail.
+    const car = makeCar(game.scene, 'sport', 0, 0, 0, 0xd23b8e);
+    game.enterCar(car, true);
+    game.wanted = 4;
+    game.player.cash = 2450;
+    game.missions.startMission(2);
+    simulate(game, 150, ['KeyW']);
+    // Pull police cars into the frame: flanking the player, lights flashing.
+    const h = game.player.heading;
+    const fx = Math.sin(h);
+    const fz = Math.cos(h);
+    const rx = Math.cos(h);
+    const rz = -Math.sin(h);
+    const spots = [
+      { f: 9, r: -6.5 },
+      { f: -4, r: 7 },
+      { f: -12, r: -5 },
+    ];
+    game.police.policeCars.forEach((pc, i) => {
+      const s = spots[i % spots.length];
+      pc.x = game.player.x + fx * s.f + rx * s.r;
+      pc.z = game.player.z + fz * s.f + rz * s.r;
+      pc.heading = h;
+      pc.speed = 20;
+    });
+    game.cameraLocked = false;
+    game.step(1 / 60, true);
+    game.hud.showFlash('WANTED — 4 STARS! Lose the VHPD!', 30);
+    return;
   }
-  const over = world.state.lives === 0;
-  return { screen: over ? SCREEN_OVER : SCREEN_PLAY, best: world.state.score };
+
+  if (name === 'drive') {
+    // Cruising downtown in a sports car, traffic all around.
+    const car = makeCar(game.scene, 'sport', -58, 0, Math.PI / 2, 0x00e5ff);
+    game.enterCar(car, true);
+    game.player.cash = 1200;
+    simulate(game, 220, ['KeyW']);
+    game.cameraLocked = false;
+    game.step(1 / 60, true);
+    return;
+  }
+
+  if (name === 'mission') {
+    // Mission in progress: on foot at the marina, Rico's marker beacon ahead.
+    game.player.x = game.city.marina.x - 14;
+    game.player.z = game.city.marina.z + 6;
+    game.player.heading = Math.atan2(game.city.marina.x - game.player.x, game.city.marina.z - game.player.z);
+    game.player.cash = 350;
+    game.missions.startMission(0);
+    // Camera behind the player, looking at the marina and its beacon.
+    game.setCamYaw(game.player.heading + Math.PI);
+    simulate(game, 60, []);
+    game.cameraLocked = false;
+    game.step(1 / 60, true);
+    return;
+  }
+
+  // Unknown shot name: plain free roam.
+  simulate(game, 30, []);
 }

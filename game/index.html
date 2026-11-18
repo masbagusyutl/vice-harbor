@@ -3,17 +3,112 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Block Dodger</title>
+<title>Vice Harbor — Neon Coast Open World</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #11141b; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1230; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
   #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-  /* Read aloud, never shown: the status line screen readers announce. */
   #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* --- HUD --- */
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #eef1f5; display: none; z-index: 5; }
+  #hud-top-right { position: absolute; top: 14px; right: 14px; text-align: right; }
+  #cash { font-size: 28px; font-weight: 800; color: #7cff4d; text-shadow: 0 2px 4px #000; }
+  #stars { font-size: 26px; letter-spacing: 4px; text-shadow: 0 2px 4px #000; }
+  #hud-top-left { position: absolute; top: 14px; left: 14px; width: 240px; }
+  #health-bar { width: 220px; height: 16px; border: 2px solid #fff; background: rgba(0,0,0,.55); border-radius: 3px; }
+  #health-fill { height: 100%; width: 100%; background: #4caf50; }
+  #health-text { font-size: 13px; text-shadow: 0 1px 3px #000; }
+  #car-name { font-size: 14px; margin-top: 4px; text-shadow: 0 1px 3px #000; }
+  #speed { font-size: 20px; font-weight: 700; text-shadow: 0 1px 3px #000; }
+  #objective { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); max-width: 560px; text-align: center;
+    background: rgba(0,0,0,.55); padding: 8px 16px; border-radius: 6px; font-size: 15px; border-left: 4px solid #ffe14d; }
+  #timer { position: absolute; top: 62px; left: 50%; transform: translateX(-50%); color: #ffe14d; font-weight: 700; font-size: 20px; text-shadow: 0 2px 4px #000; }
+  #flash { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 800;
+    color: #ff5252; text-shadow: 0 2px 6px #000; opacity: 0; transition: opacity .3s; text-align: center; }
+  #minimap { position: absolute; right: 14px; bottom: 14px; width: 190px; height: 190px;
+    border: 2px solid rgba(255,255,255,.7); border-radius: 6px; background: #101018; }
+  #controls-hint { position: absolute; left: 14px; bottom: 14px; font-size: 12px; color: #cfd3de;
+    text-shadow: 0 1px 3px #000; background: rgba(0,0,0,.4); padding: 6px 10px; border-radius: 6px; }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px;
+    border: 2px solid #fff; border-radius: 50%; opacity: .8; display: none; }
+
+  /* --- Overlays --- */
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; z-index: 10; color: #fff; text-align: center; }
+  #title-screen { background: linear-gradient(180deg, rgba(20,8,40,.25) 0%, rgba(20,8,40,.78) 78%); }
+  #title-screen h1 { font-size: 72px; margin: 0; letter-spacing: 2px; color: #ff2e88;
+    text-shadow: 0 0 24px #ff2e88, 0 4px 0 #7a1046, 0 6px 18px #000; font-style: italic; }
+  #title-screen h2 { font-size: 20px; margin: 6px 0 22px; color: #00e5ff; letter-spacing: 6px; text-transform: uppercase;
+    text-shadow: 0 0 12px #00e5ff, 0 2px 6px #000; }
+  .tagline { font-size: 16px; color: #e8e4ff; margin-bottom: 26px; text-shadow: 0 2px 4px #000; }
+  .btn { pointer-events: auto; cursor: pointer; font-size: 20px; font-weight: 800; padding: 12px 42px; margin: 6px;
+    border: none; border-radius: 6px; color: #14101f; background: #ffe14d; box-shadow: 0 4px 0 #b89b00; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.secondary { background: #00e5ff; box-shadow: 0 4px 0 #007a8a; }
+  .controls { margin-top: 26px; font-size: 14px; line-height: 1.9; color: #dfe3ee; background: rgba(0,0,0,.5);
+    padding: 14px 26px; border-radius: 8px; text-align: left; }
+  .controls b { color: #ffe14d; }
+  #pause-screen, #end-screen { background: rgba(10,6,24,.72); display: none; }
+  #pause-screen h1, #end-screen h1 { font-size: 54px; margin: 0 0 10px; text-shadow: 0 4px 12px #000; }
+  #end-screen h1.wasted { color: #ff5252; }
+  #end-screen h1.busted { color: #42a5f5; }
+  #end-screen p, #pause-screen p { font-size: 18px; color: #dfe3ee; }
 </style>
 </head>
 <body>
-<canvas id="game" aria-label="Block Dodger: move the paddle left and right to dodge falling blocks and catch coins"></canvas>
+<canvas id="game" aria-label="Vice Harbor: a 3D open-world game. Walk, steal cars, outrun the police and run missions."></canvas>
 <p id="status" role="status" aria-live="polite"></p>
+
+<div id="hud">
+  <div id="hud-top-left">
+    <div id="health-bar"><div id="health-fill"></div></div>
+    <div id="health-text">100</div>
+    <div id="car-name">On foot</div>
+    <div id="speed"></div>
+  </div>
+  <div id="hud-top-right">
+    <div id="cash">$0</div>
+    <div id="stars">☆☆☆☆☆</div>
+  </div>
+  <div id="objective"></div>
+  <div id="timer"></div>
+  <div id="flash"></div>
+  <canvas id="minimap" width="190" height="190"></canvas>
+  <div id="controls-hint">WASD move &nbsp;·&nbsp; E enter/exit car &nbsp;·&nbsp; Click shoot &nbsp;·&nbsp; F punch &nbsp;·&nbsp; Shift run &nbsp;·&nbsp; P pause &nbsp;·&nbsp; M mute</div>
+  <div id="crosshair"></div>
+</div>
+
+<div id="title-screen" class="overlay">
+  <h1>VICE HARBOR</h1>
+  <h2>Neon Coast Open World</h2>
+  <div class="tagline">Steal cars. Outrun the VHPD. Run missions for Rico and Lena.<br>An original open-world crime game — no Rockstar material.</div>
+  <button class="btn" id="btn-start">▶ &nbsp;START GAME</button>
+  <button class="btn secondary" id="btn-continue" style="display:none">CONTINUE — saved game</button>
+  <div class="controls">
+    <b>W A S D</b> — walk / drive &nbsp;&nbsp; <b>Mouse</b> — look around (click to lock)<br>
+    <b>Shift</b> — run &nbsp;&nbsp; <b>E</b> — enter / exit car (steal parked or moving cars)<br>
+    <b>Left click</b> — shoot &nbsp;&nbsp; <b>F</b> — punch &nbsp;&nbsp; <b>P / Esc</b> — pause &nbsp;&nbsp; <b>M</b> — mute<br>
+    Crime raises your <b>wanted stars</b> — break line of sight and lie low to cool off.
+  </div>
+</div>
+
+<div id="pause-screen" class="overlay">
+  <h1>PAUSED</h1>
+  <p>Vice Harbor waits for no one. Well — except now.</p>
+  <button class="btn" id="btn-resume">RESUME</button>
+  <button class="btn secondary" id="btn-save-quit">SAVE &amp; QUIT TO TITLE</button>
+</div>
+
+<div id="end-screen" class="overlay">
+  <h1 id="end-title" class="wasted">WASTED</h1>
+  <p id="end-text"></p>
+  <button class="btn" id="btn-retry">TRY AGAIN</button>
+  <button class="btn secondary" id="btn-title">BACK TO TITLE</button>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
