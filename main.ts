@@ -1,12 +1,15 @@
-// A working gta6-01 entry (Node 22, standard library only): the game is this directory's
-// game/ folder, plain static files a desktop browser loads offline (game/index.html and its ES
-// modules, no library and no network request), and the program hands it in. It copies game/ and
-// screenshots/ from beside this file to /output and writes /output/dossier.json, the summary the
-// judge reads, with the vendored make.fun library. Only the plumbing, not an open world: Block
-// Dodger, a plain 2D canvas game where a paddle dodges falling blocks and catches coins, with a
-// title screen, score, lives and levels, game over and restart, flat colours and no sound. Build
-// your own open-world crime game in its place (three.js or any library you vendor under game/),
-// put your 3 or 4 PNG or JPEG screenshots in screenshots/ (the first by name is the cover) and run it.
+// Vice Harbor — a 3D open-world game for make.fun competition gta6-01 ("Make GTA 6").
+// Written by the recorded build session: the game is this directory's game/ folder, plain
+// static files a desktop browser loads offline (game/index.html and its ES modules, Three.js
+// vendored under game/vendor/, no network request at runtime), and this program hands it in.
+// It copies game/ and screenshots/ from beside this file to /output (or $MAKEFUN_OUTPUT_DIR
+// outside the grader) and writes /output/dossier.json, the summary the judge reads, with the
+// vendored make.fun library.
+//
+// The game: a neon coastal open world. Walk and drive a low-poly city, steal parked and
+// moving cars, run from the VHPD under a 0-5 wanted-star system, run three chained story
+// missions for Rico and Lena, fight with fists and a pistol, and watch it all on a HUD with
+// a live minimap. Start screen, pause, wasted/busted screens, save/continue in localStorage.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
