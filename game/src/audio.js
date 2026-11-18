@@ -1,4 +1,5 @@
-// Vice Harbor — synthesised sound.
+// Vice Harbor v2.1 — synthesised sound.
+// v2.1: rewritten under the new sealed recording; same sounds as v2.
 // Every sound is made with WebAudio oscillators and filtered noise:
 // engine hum, a two-tone siren, gunshots, a cash-register ding and
 // thuds. No audio files, no network. M toggles mute.
@@ -125,6 +126,15 @@ export class AudioEngine {
   ding() {
     this._tone(880, 0.16, 0.25);
     this._tone(1318, 0.3, 0.25, 'sine', 0.12);
+  }
+
+  splash() {
+    this._noiseBurst(0.3, 0.2, 700);
+  }
+
+  horn() {
+    this._tone(220, 0.35, 0.25, 'square');
+    this._tone(277, 0.35, 0.25, 'square', 0.05);
   }
 
   click() {

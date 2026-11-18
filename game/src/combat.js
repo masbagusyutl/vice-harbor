@@ -1,7 +1,10 @@
-// Vice Harbor — combat.
+// Vice Harbor v2.1 — combat.
+// v2.1: rewritten under the new sealed recording; same combat as v2.
 // Hitscan shooting from the camera crosshair, a melee swing, muzzle
 // tracers, and the damage the player takes. Shooting in public and
-// hurting people both raise the wanted level.
+// hurting people both raise the wanted level. v2: the Heavy Pistol
+// from Iron & Ink doubles damage and fires faster; boats can be shot
+// too (their hulls take damage like cars).
 
 import * as THREE from 'three';
 import { addWanted, killCharacter } from './police.js';
@@ -17,6 +20,9 @@ function collectTargets(G) {
   for (const car of G.cars) {
     if (car !== G.player.car) targets.push(car.mesh);
   }
+  for (const boat of G.boats || []) {
+    if (boat !== G.player.boat) targets.push(boat.mesh);
+  }
   return targets;
 }
 
@@ -28,8 +34,10 @@ function showTracer(G, from, to) {
 }
 
 export function shoot(G) {
-  if (G.state !== 'playing' || G.player.car) return;
-  if (G.time - (G.lastShotAt || 0) < 0.22) return;
+  if (G.state !== 'playing' || G.player.car || G.player.boat) return;
+  const heavy = G.stats && G.stats.hasPistol;
+  const cooldown = heavy ? 0.12 : 0.22;
+  if (G.time - (G.lastShotAt || 0) < cooldown) return;
   G.lastShotAt = G.time;
   if (G.audio) G.audio.shot(false);
   raycaster.setFromCamera(screenCentre, G.camera);
@@ -48,19 +56,23 @@ export function shoot(G) {
       if (obj.userData.pedRef) { ref = obj.userData.pedRef; kind = 'ped'; break; }
       if (obj.userData.copRef) { ref = obj.userData.copRef; kind = 'cop'; break; }
       if (obj.userData.carRef) { ref = obj.userData.carRef; kind = 'car'; break; }
+      if (obj.userData.boatRef) { ref = obj.userData.boatRef; kind = 'boat'; break; }
       obj = obj.parent;
     }
     if (kind === 'ped' && ref) {
       knockPedDown(G, ref);
       addWanted(G, 1, 'assault');
     } else if (kind === 'cop' && ref) {
-      ref.health -= 1;
+      ref.health -= heavy ? 2 : 1;
       if (ref.health <= 0) {
         killCharacter(G, ref);
         addWanted(G, 1, 'officer down');
       }
     } else if (kind === 'car' && ref) {
-      ref.health -= 10;
+      ref.health -= heavy ? 20 : 10;
+      if (G.audio) G.audio.thud();
+    } else if (kind === 'boat' && ref) {
+      ref.health = (ref.health ?? 100) - (heavy ? 20 : 10);
       if (G.audio) G.audio.thud();
     }
   }
@@ -76,7 +88,7 @@ export function shoot(G) {
 }
 
 export function melee(G) {
-  if (G.state !== 'playing' || G.player.car) return;
+  if (G.state !== 'playing' || G.player.car || G.player.boat) return;
   if (G.time - (G.lastMeleeAt || 0) < 0.5) return;
   G.lastMeleeAt = G.time;
   if (G.audio) G.audio.swing();

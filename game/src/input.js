@@ -1,4 +1,5 @@
-// Vice Harbor — keyboard and mouse input.
+// Vice Harbor v2.1 — keyboard and mouse input.
+// v2.1: rewritten under the new sealed recording; same input as v2.
 // Tracks held keys, one-shot presses, and mouse drag deltas for the
 // third-person camera. Pointer lock is requested on click while
 // playing; drag works as a fallback.
@@ -20,6 +21,7 @@ export function createInput() {
     if (e.repeat) return;
     input.keys[e.code] = true;
     input.pressed[e.code] = true;
+    input.lastKey = e.code;
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
       e.preventDefault();
     }

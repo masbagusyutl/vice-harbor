@@ -1,4 +1,5 @@
-// Vice Harbor — pedestrians.
+// Vice Harbor v2.1 — pedestrians.
+// v2.1: rewritten under the new sealed recording; same crowds as v2.
 // People walk the pavements, cross at intersections, and run away
 // from gunfire, speeding cars and nearby crime. Hit one with a car
 // and the law notices.
@@ -37,6 +38,23 @@ function randomSidewalkSpot(rng, city) {
   const side = rng() < 0.5 ? 1 : -1;
   if (rng() < 0.5) return { x: along, z: line + side * 9.5 };
   return { x: line + side * 9.5, z: along };
+}
+
+// A few tourists stand on the boardwalk looking out to sea instead
+// of walking: they give the beach life without blocking the roads.
+export function createTourists(G, count) {
+  const list = [];
+  for (let i = 0; i < count; i++) {
+    const mesh = makePedMesh(G.rng);
+    const x = -180 + G.rng() * 360;
+    mesh.position.set(x, 0, -188 - G.rng() * 4);
+    mesh.rotation.y = Math.PI;
+    G.scene.add(mesh);
+    const ped = { mesh, heading: Math.PI, speed: 0, target: { x, z: -190 }, fleeing: false, fleeTimer: 0, alive: true, fallTimer: 0, tourist: true };
+    mesh.traverse((o) => { o.userData.pedRef = ped; });
+    list.push(ped);
+  }
+  return list;
 }
 
 export function createPedestrians(G, count) {

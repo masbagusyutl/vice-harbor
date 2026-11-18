@@ -1,4 +1,5 @@
-// Vice Harbor — the entry program for make.fun competition gta6-01.
+// Vice Harbor v2.1 — the entry program for make.fun competition gta6-01.
+// v2.1: rewritten under the new sealed recording; same copy + dossier behaviour as v2.
 // Node 22, standard library only. It hands the game in: it copies the
 // playable static files under game/ and the screenshots under
 // screenshots/ from beside this file to /output, then writes
@@ -7,6 +8,8 @@
 // grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 // The program is deterministic: two runs write the same bytes.
+// v2 ships 4 screenshots (title, story job, boat race, pause stats),
+// 7 story jobs, 3 races, 24 Harbor Reels and 10 districts.
 
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Vice Harbor v2.1 — rewritten under the new sealed recording; same page as v2. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -18,7 +19,10 @@
   #health-text { font-size: 12px; text-shadow: 0 1px 2px #000; margin-top: 2px; }
   #cash-text { font-size: 26px; font-weight: 800; color: #4be36b; text-shadow: 0 2px 4px #000; margin-top: 6px; }
   #stars { font-size: 26px; letter-spacing: 4px; text-shadow: 0 2px 4px #000; margin-top: 2px; }
+  #district-text { font-size: 14px; font-weight: 700; color: #00e5ff; text-shadow: 0 1px 2px #000; margin-top: 4px; }
   #objective { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); max-width: 46vw; text-align: center; font-size: 16px; font-weight: 700; background: rgba(0,0,0,.55); border: 1px solid rgba(255,210,62,.7); border-radius: 6px; padding: 8px 16px; color: #ffe27a; text-shadow: 0 1px 2px #000; }
+  #race-text { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); font-size: 15px; font-weight: 800; background: rgba(0,0,0,.6); border: 1px solid rgba(123,255,94,.8); border-radius: 6px; padding: 6px 14px; color: #7bff5e; text-shadow: 0 1px 2px #000; }
+  #race-text:empty { display: none; }
   #minimap { position: absolute; top: 14px; right: 14px; width: 180px; height: 180px; background: rgba(0,0,0,.6); border: 2px solid rgba(255,255,255,.65); border-radius: 4px; }
   #speed-text { position: absolute; bottom: 16px; right: 16px; font-size: 20px; font-weight: 700; text-shadow: 0 2px 4px #000; }
   #toast { position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%); font-size: 17px; font-weight: 700; background: rgba(0,0,0,.65); border-radius: 6px; padding: 8px 18px; opacity: 0; transition: opacity .3s; text-align: center; max-width: 70vw; }
@@ -28,6 +32,21 @@
   #crosshair::after { top: 8px; left: 0; width: 18px; height: 2px; }
   #damage-flash { position: fixed; inset: 0; pointer-events: none; z-index: 25; background: radial-gradient(ellipse at center, transparent 55%, rgba(255,0,0,.55) 100%); opacity: 0; transition: opacity .15s; }
   #help-line { position: absolute; bottom: 14px; left: 14px; font-size: 12px; color: rgba(255,255,255,.75); text-shadow: 0 1px 2px #000; }
+
+  /* Dialogue box (story lines) */
+  #dialogue { position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%); width: 560px; max-width: 80vw; background: rgba(10,8,30,.85); border: 1px solid rgba(0,229,255,.7); border-radius: 8px; padding: 12px 18px; display: none; }
+  #dialogue-name { font-size: 14px; font-weight: 800; color: #00e5ff; margin-bottom: 4px; }
+  #dialogue-text { font-size: 16px; line-height: 1.45; }
+  /* Choice prompt (story forks) */
+  #choice-box { position: absolute; top: 110px; left: 50%; transform: translateX(-50%); width: 620px; max-width: 82vw; background: rgba(20,8,40,.9); border: 2px solid #ffd23e; border-radius: 8px; padding: 14px 18px; font-size: 16px; font-weight: 700; line-height: 1.5; text-align: center; display: none; color: #ffe27a; }
+  /* Shop box */
+  #shop-box { position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); background: rgba(10,8,30,.9); border: 1px solid #ff3e6e; border-radius: 8px; padding: 12px 18px; font-size: 15px; font-weight: 700; display: none; text-align: center; }
+  /* Job complete overlay */
+  #job-complete { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; pointer-events: none; }
+  #job-complete-body { background: rgba(10,8,30,.92); border: 2px solid #ffd23e; border-radius: 10px; padding: 22px 34px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  .jc-title { font-size: 30px; font-weight: 900; letter-spacing: 2px; color: #ffd23e; margin-bottom: 10px; }
+  .jc-row { font-size: 17px; margin: 5px 0; }
+  .jc-row b { color: #4be36b; }
 
   /* Full-screen menus */
   .screen { position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; background: linear-gradient(180deg, rgba(20,8,40,.55) 0%, rgba(20,8,40,.82) 100%); }
@@ -40,7 +59,13 @@
   .btn { pointer-events: auto; cursor: pointer; font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #14082a; background: linear-gradient(180deg, #ffd23e, #ff9a2e); border: none; border-radius: 8px; padding: 14px 42px; margin: 4px 6px; box-shadow: 0 4px 0 #8a5a00, 0 8px 20px rgba(0,0,0,.5); }
   .btn:hover { filter: brightness(1.1); }
   .btn.secondary { background: linear-gradient(180deg, #9be8ff, #3e8bff); box-shadow: 0 4px 0 #123a7a, 0 8px 20px rgba(0,0,0,.5); }
+  .btn.small { font-size: 14px; padding: 8px 16px; letter-spacing: 1px; }
   .screen .fine { margin-top: 22px; font-size: 13px; color: rgba(255,255,255,.7); max-width: 560px; line-height: 1.6; }
+  #pause-stats { background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.35); border-radius: 8px; padding: 14px 22px; font-size: 15px; line-height: 1.7; text-align: left; margin-bottom: 18px; max-width: 640px; }
+  .ps-big { font-size: 26px; font-weight: 900; color: #4be36b; text-align: center; margin-bottom: 6px; }
+  .ps-row { color: #e8e8f2; }
+  .ps-row b { color: #ffd23e; }
+  .pause-shops { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px; }
 </style>
 </head>
 <body>
@@ -53,38 +78,57 @@
     <div id="health-text">100</div>
     <div id="cash-text">$100</div>
     <div id="stars">☆☆☆☆☆</div>
+    <div id="district-text">Neon Row · Rookie</div>
   </div>
   <div id="objective">Press T to start the first job</div>
+  <div id="race-text"></div>
   <canvas id="minimap" width="180" height="180"></canvas>
   <div id="speed-text"></div>
   <div id="toast"></div>
   <div id="crosshair"></div>
-  <div id="help-line">WASD move &middot; Mouse camera &middot; E enter / steal car &middot; Click shoot &middot; F punch &middot; T mission &middot; M mute &middot; P pause</div>
+  <div id="dialogue"><div id="dialogue-name"></div><div id="dialogue-text"></div></div>
+  <div id="choice-box"><div id="choice-text"></div></div>
+  <div id="shop-box"></div>
+  <div id="help-line">WASD move &middot; Mouse camera &middot; E enter / steal car or boat &middot; Click shoot &middot; F punch &middot; T job &middot; R race &middot; Y taxi fare &middot; G shop &middot; P pause &middot; M mute</div>
 </div>
 <div id="damage-flash"></div>
+<div id="job-complete"><div id="job-complete-body"></div></div>
 
 <div class="screen" id="screen-menu" style="display:flex">
   <h1>VICE <span class="harbor">HARBOR</span></h1>
-  <p class="tagline">A neon-coast open-world crime story. Steal cars, dodge the Harbor PD,<br>run jobs for Rico — and own the city.</p>
+  <p class="tagline">A neon-coast open-world crime story. Steal cars, dodge the Harbor PD,<br>run 7 jobs for Rico Marlowe — and own all 10 districts of the city.</p>
   <div class="controls">
-    <div><b>W A S D</b> walk / drive &nbsp;·&nbsp; Shift: run</div>
+    <div><b>W A S D</b> walk / drive / sail &nbsp;·&nbsp; Shift: run</div>
     <div><b>Mouse</b> drag to look around</div>
-    <div><b>E</b> enter a car — or jack a moving one</div>
+    <div><b>E</b> enter a car or a boat — or jack a moving car</div>
     <div><b>Click</b> shoot &nbsp;·&nbsp; F: punch</div>
-    <div><b>T</b> start / retry a mission &nbsp;·&nbsp; P: pause &nbsp;·&nbsp; M: mute</div>
+    <div><b>T</b> start / retry a job &nbsp;·&nbsp; R: street race &nbsp;·&nbsp; Y: taxi fare</div>
+    <div><b>G</b> shop at Iron &amp; Ink / Fresh Coat &nbsp;·&nbsp; P: pause &amp; stats &nbsp;·&nbsp; M: mute</div>
   </div>
   <div>
     <button class="btn" id="btn-play">PLAY</button>
     <button class="btn secondary" id="btn-continue">CONTINUE</button>
   </div>
   <p class="fine">An original game: its city, characters, vehicles and story are all its own.
-  Wanted stars rise with every crime — break line of sight and lie low to cool off.
-  Your cash, jobs and position save automatically.</p>
+  7 story jobs, 3 race routes, 24 hidden Harbor Reels, 10 districts to claim as turf,
+  a crew to hire, and a boat to steal. Wanted stars rise with every crime — break line
+  of sight and lie low to cool off. Your cash, jobs and position save automatically.</p>
 </div>
 
 <div class="screen" id="screen-pause">
   <h2>PAUSED</h2>
   <p class="tagline">Vice Harbor waits for no one. Well — except now.</p>
+  <div id="pause-stats"></div>
+  <div class="pause-shops">
+    <button class="btn small" data-shop="pistol">HEAVY PISTOL — $250</button>
+    <button class="btn small" data-shop="armor">BODY ARMOR — $200</button>
+    <button class="btn small" data-shop="respray">FRESH COAT — $150</button>
+  </div>
+  <div class="pause-shops">
+    <button class="btn small secondary" data-crew="lena">HIRE LENA (LOOKOUT) — $300</button>
+    <button class="btn small secondary" data-crew="milo">HIRE MILO (DRIVER) — $400</button>
+    <button class="btn small secondary" data-crew="sal">HIRE BIG SAL (MUSCLE) — $500</button>
+  </div>
   <button class="btn" id="btn-resume">RESUME</button>
 </div>
 

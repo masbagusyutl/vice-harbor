@@ -1,29 +1,38 @@
-// Vice Harbor — story missions.
-// Three chained jobs, each with a glowing 3D beacon in the world, a
-// minimap blip and a HUD objective line. Finish one to unlock the
-// next; timed jobs can fail and be retried with T.
+// Vice Harbor v2.1 — story missions.
+// v2.1: rewritten under the new sealed recording; the 7-job chain,
+// both branching choices and the finale variants are unchanged.
+// Seven chained jobs, each with a glowing 3D beacon in the world, a
+// minimap blip, dialogue in a dialogue box, and a JOB COMPLETE
+// screen with payout and stats. Two jobs offer a real choice (keys
+// 1/2) that changes the payout, the heat, and the finale. Finishing
+// a job captures its district as turf and brings a crew companion.
 
 import * as THREE from 'three';
 import { MISSIONS } from './config.js';
 import { addWanted } from './police.js';
+import { captureTurf, addRespect, applyPayout, spawnCrewCompanion } from './progression.js';
 
 const MARKER_SPOTS = {
   meet: (G) => G.city.marina,
   delivery: (G) => G.city.delivery,
-  getaway: (G) => G.city.hideout,
+  shakedown: (G) => G.city.coral,
+  escort: (G) => G.city.heights,
+  theft: (G) => G.city.docks,
+  chase: (G) => G.city.strip,
+  finale: (G) => G.city.neon,
 };
 
-function makeBeacon(G, x, z) {
+function makeBeacon(G, x, z, color = 0xffd23e) {
   const group = new THREE.Group();
   const pillar = new THREE.Mesh(
     new THREE.CylinderGeometry(1.4, 1.4, 34, 12, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xffd23e, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }),
   );
   pillar.position.y = 17;
   group.add(pillar);
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(2.2, 0.22, 8, 24),
-    new THREE.MeshBasicMaterial({ color: 0xffd23e }),
+    new THREE.MeshBasicMaterial({ color }),
   );
   ring.rotation.x = Math.PI / 2;
   ring.position.y = 0.3;
@@ -50,21 +59,55 @@ export function startMission(G, index) {
     index,
     state: 'active',
     timeLeft: def.timeLimit,
+    timeStarted: G.time,
     x: spot.x,
     z: spot.z,
     beacon: makeBeacon(G, spot.x, spot.z),
+    choiceMade: null,
   };
   G.missionIndex = index;
-  if (def.id === 'getaway') {
-    G.wanted = 3;
+  if (def.startStars) {
+    G.wanted = def.startStars;
     G.lastCrimeAt = G.time;
     G.lastSeenAt = G.time;
     if (G.audio) G.audio.siren(true);
-    if (G.hud) G.hud.toast('3 stars! Reach the hideout — lose the cops or outrun them.');
-  } else if (G.hud) {
-    G.hud.toast(`Mission: ${def.title} — $${def.reward}`);
   }
-  if (G.hud) G.hud.setObjective(`${def.title} — $${def.reward}`);
+  if (def.dialogue && G.hud && G.hud.showDialogue) {
+    G.hud.showDialogue(def.dialogue);
+  }
+  if (def.choice && G.hud && G.hud.showChoice) {
+    G.hud.showChoice(def.choice.prompt);
+    G.mission.awaitingChoice = true;
+  }
+  if (G.hud) {
+    G.hud.toast(`Job: ${def.title} — $${def.reward}${def.timeLimit ? ` — ${def.timeLimit}s` : ''}`);
+    G.hud.setObjective(`${def.title} — $${def.reward}`);
+  }
+  spawnCrewCompanion(G);
+}
+
+// The player picks option 1 or 2 for a choice job.
+export function makeChoice(G, key) {
+  const m = G.mission;
+  if (!m || !m.awaitingChoice || !m.def.choice) return false;
+  const opt = m.def.choice.options.find((o) => o.key === key);
+  if (!opt) return false;
+  m.awaitingChoice = false;
+  m.choiceMade = opt;
+  if (G.hud && G.hud.hideChoice) G.hud.hideChoice();
+  if (opt.stars) addWanted(G, opt.stars, 'choice made');
+  if (G.hud) G.hud.toast(opt.note);
+  // The dock-heist choice changes the finale and unlocks the boat race.
+  if (m.def.id === 'theft') {
+    if (opt.key === '1') {
+      G.stats.boatUnlocked = true;
+      G.stats.finaleVariant = 'boat';
+    } else {
+      G.stats.finaleVariant = 'truck';
+    }
+  }
+  G.stats.choices.push({ job: m.def.id, picked: opt.label });
+  return true;
 }
 
 export function clearBeacon(G) {
@@ -77,12 +120,34 @@ export function clearBeacon(G) {
 export function completeMission(G) {
   const m = G.mission;
   if (!m) return;
-  G.cash += m.def.reward;
+  const elapsed = Math.round(G.time - m.timeStarted);
+  let reward = applyPayout(G, m.def.reward);
+  if (m.choiceMade) reward += m.choiceMade.bonus;
+  G.cash += reward;
   G.missionsDone += 1;
+  G.stats.jobsDone += 1;
+  addRespect(G, 50);
+  captureTurf(G, m.x, m.z);
+  if (m.def.finale) {
+    const variant = G.stats.finaleVariant === 'boat'
+      ? 'You came in by water — the harbor is yours, sea and streets.'
+      : 'You came in loud — the harbor is yours, every street of it.';
+    if (G.hud) G.hud.toast(variant);
+  }
   if (G.audio) G.audio.ding();
   if (G.hud) {
-    G.hud.toast(`Mission complete! +$${m.def.reward} — ${m.def.title}`);
-    G.hud.setObjective('Mission complete! Press T for the next job.');
+    G.hud.setObjective('Job complete! Press T for the next job.');
+    if (G.hud.showJobComplete) {
+      G.hud.showJobComplete({
+        title: m.def.title,
+        reward,
+        time: elapsed,
+        damage: Math.max(0, 100 - Math.round(G.player.health)),
+        choice: m.choiceMade ? m.choiceMade.label : null,
+        finale: !!m.def.finale,
+        variant: m.def.finale ? G.stats.finaleVariant : null,
+      });
+    }
   }
   clearBeacon(G);
   G.mission = null;
@@ -95,8 +160,9 @@ export function failMission(G, why) {
   const m = G.mission;
   if (!m) return;
   if (G.hud) {
-    G.hud.toast(`Mission failed — ${why}. Press T to retry.`);
-    G.hud.setObjective(`Mission failed. Press T to retry: ${m.def.title}`);
+    G.hud.toast(`Job failed — ${why}. Press T to retry.`);
+    G.hud.setObjective(`Job failed. Press T to retry: ${m.def.title}`);
+    if (G.hud.hideChoice) G.hud.hideChoice();
   }
   clearBeacon(G);
   G.mission = null;
@@ -135,7 +201,8 @@ export function missionObjectiveText(G) {
   const m = G.mission;
   if (m) {
     const timer = m.def.timeLimit > 0 ? ` — ${Math.ceil(m.timeLeft)}s left` : '';
-    return `${m.def.title}${timer}`;
+    const choice = m.awaitingChoice ? ' — press 1 or 2 to choose' : '';
+    return `${m.def.title}${timer}${choice}`;
   }
   if (G.missionIndex + 1 < MISSIONS.length) return 'Press T to start the next job';
   if (G.missionsDone >= MISSIONS.length) return 'All jobs done — free roam!';

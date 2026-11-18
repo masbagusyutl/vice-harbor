@@ -1,4 +1,5 @@
-// Vice Harbor — vehicles: building cars and driving them.
+// Vice Harbor v2.1 — vehicles: building cars and driving them.
+// v2.1: rewritten under the new sealed recording; same handling as v2.
 // Every car is a low-poly mesh built from boxes in code, with its own
 // handling from config.js. Driving is arcade physics: accelerate,
 // brake, steer, drift a little, crash into things and slow down.
@@ -156,6 +157,12 @@ export function separateCars(a, b) {
     return true;
   }
   return false;
+}
+
+// How many drivable car types the game ships (7 in v2: the six from
+// v1 plus the Thunderhawk muscle car).
+export function vehicleTypeCount() {
+  return Object.keys(CAR_TYPES).length;
 }
 
 export function nearestCar(G, x, z, maxDist) {

@@ -1,4 +1,5 @@
-// Vice Harbor — traffic AI.
+// Vice Harbor v2.1 — traffic AI.
+// v2.1: rewritten under the new sealed recording; same traffic as v2.
 // Ambient cars drive the road grid: they follow a road line, turn at
 // intersections, slow down for the car ahead, and never leave the city.
 // They are also the cars the player can steal.
@@ -6,7 +7,7 @@
 import { CAR_TYPES, pick } from './config.js';
 import { createCar, forwardOf, separateCars } from './vehicles.js';
 
-const TRAFFIC_TYPES = ['compact', 'sedan', 'sedan', 'taxi', 'van', 'compact'];
+const TRAFFIC_TYPES = ['compact', 'sedan', 'sedan', 'taxi', 'van', 'compact', 'muscle'];
 
 function randomRoadSpot(rng, city) {
   const axis = rng() < 0.5 ? 'x' : 'z';

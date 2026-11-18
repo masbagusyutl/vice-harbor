@@ -1,12 +1,17 @@
-// Vice Harbor — the neon coastal city.
+// Vice Harbor v2.1 — the neon coastal city.
+// v2.1: rewritten under the new sealed recording; same world as v2.
 // Builds the whole 3D world from code: road grid, city blocks with
 // varied buildings and lit windows, neon signs, streetlights, palm
-// trees, and a beach / boardwalk / sea edge. No external assets.
+// trees, and a beach / boardwalk / sea edge. v2 adds: ten named
+// district signs, the Iron & Ink gun shop, the Fresh Coat respray
+// garage, the docks with moored boats, and light rigs the day-night
+// cycle drives. No external assets.
 // Returns the road network, building colliders and key locations
-// (marina, hideout, delivery tower, hospital) the missions use.
+// (marina, hideout, delivery tower, hospital, docks, shops) the
+// missions, races and shop use.
 
 import * as THREE from 'three';
-import { WORLD, PALETTE, pick, clamp } from './config.js';
+import { WORLD, PALETTE, DISTRICTS, pick, clamp } from './config.js';
 
 function roadLines() {
   const lines = [];
@@ -48,6 +53,40 @@ export function resolveCollision(pos, radius, colliders) {
   return hit;
 }
 
+// A small canvas-texture sign with a district name, on two poles.
+function makeDistrictSign(scene, d) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#10131a';
+  ctx.fillRect(0, 0, 512, 128);
+  ctx.fillStyle = `#${d.color.toString(16).padStart(6, '0')}`;
+  ctx.fillRect(0, 0, 512, 10);
+  ctx.fillRect(0, 118, 512, 10);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 52px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(d.name.toUpperCase(), 256, 66);
+  const tex = new THREE.CanvasTexture(canvas);
+  const sign = new THREE.Mesh(
+    new THREE.PlaneGeometry(22, 5.5),
+    new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }),
+  );
+  const cx = (d.x0 + d.x1) / 2;
+  const cz = (d.z0 + d.z1) / 2;
+  sign.position.set(cx, 9, cz);
+  sign.rotation.y = 0;
+  scene.add(sign);
+  const poleMat = new THREE.MeshLambertMaterial({ color: 0x30343c });
+  for (const ox of [-10, 10]) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 9, 6), poleMat);
+    pole.position.set(cx + ox, 4.5, cz);
+    scene.add(pole);
+  }
+}
+
 export function buildCity(scene, rng) {
   const lines = roadLines();
   const B = WORLD.bounds;
@@ -59,6 +98,13 @@ export function buildCity(scene, rng) {
     hideout: { x: -168, z: -182 },
     delivery: { x: -150, z: 168 },
     hospital: { x: 168, z: 168 },
+    coral: { x: 140, z: 28 },
+    heights: { x: 140, z: 168 },
+    docks: { x: -168, z: -140 },
+    strip: { x: 0, z: 168 },
+    neon: { x: 0, z: 28 },
+    gunshop: { x: -84, z: 84 },
+    respray: { x: 84, z: -84 },
     bounds: B,
   };
 
@@ -73,6 +119,13 @@ export function buildCity(scene, rng) {
   const moonFill = new THREE.DirectionalLight(0x7a86ff, 0.25);
   moonFill.position.set(80, 120, 140);
   scene.add(moonFill);
+  // Kept on the city so the day-night cycle can drive them.
+  city.hemi = hemi;
+  city.sun = sun;
+  city.moonFill = moonFill;
+  city.skyDusk = new THREE.Color(PALETTE.sky);
+  city.skyNight = new THREE.Color(0x0a0a24);
+  city.skyDawn = new THREE.Color(0x6b3a5a);
 
   // --- ground, roads, sidewalks ---------------------------------------
   const ground = new THREE.Mesh(
@@ -217,6 +270,9 @@ export function buildCity(scene, rng) {
   windows.count = windowSpots.length;
   scene.add(windows);
 
+  // --- district signs ----------------------------------------------------
+  for (const d of DISTRICTS) makeDistrictSign(scene, d);
+
   // --- streetlights (instanced) ---------------------------------------
   const lampPoleGeo = new THREE.CylinderGeometry(0.12, 0.16, 6.5, 5);
   const lampPoleMat = new THREE.MeshLambertMaterial({ color: 0x30343c });
@@ -290,6 +346,37 @@ export function buildCity(scene, rng) {
   sea.rotation.x = -Math.PI / 2;
   sea.position.set(0, 0.02, WORLD.beachZ - WORLD.sandDepth - WORLD.seaDepth / 2 - 5);
   scene.add(sea);
+
+  // --- docks: wooden piers into the sea --------------------------------
+  const pierMat = new THREE.MeshLambertMaterial({ color: 0x6b4a2a });
+  for (const px of [-168, -112, 112, 168]) {
+    const pier = new THREE.Mesh(new THREE.BoxGeometry(6, 0.5, 34), pierMat);
+    pier.position.set(px, 0.3, -215);
+    scene.add(pier);
+  }
+
+  // --- shop markers: Iron & Ink (gun shop) and Fresh Coat (respray) ---
+  function shopMarker(x, z, color, label) {
+    const base = new THREE.Mesh(
+      new THREE.BoxGeometry(10, 4, 8),
+      new THREE.MeshLambertMaterial({ color: 0x3a4152 }),
+    );
+    base.position.set(x, 2, z);
+    scene.add(base);
+    const roof = new THREE.Mesh(
+      new THREE.BoxGeometry(11, 0.5, 9),
+      new THREE.MeshBasicMaterial({ color }),
+    );
+    roof.position.set(x, 4.3, z);
+    scene.add(roof);
+    const light = new THREE.PointLight(color, 40, 40, 1.8);
+    light.position.set(x, 7, z);
+    scene.add(light);
+    city.colliders.push({ minX: x - 5, maxX: x + 5, minZ: z - 4, maxZ: z + 4 });
+    return label;
+  }
+  shopMarker(city.gunshop.x, city.gunshop.z, 0xff3e6e, 'Iron & Ink');
+  shopMarker(city.respray.x, city.respray.z, 0x00e5ff, 'Fresh Coat');
 
   // --- neon glow accents at the marina and hideout --------------------
   const glow = (x, z, color) => {

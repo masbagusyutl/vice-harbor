@@ -1,5 +1,7 @@
-// A tiny static server for game/ (Node 22, standard library only), so an entry can be played
-// locally without a build step: `node serve.ts` serves game/ on http://localhost:8080.
+// Vice Harbor v2.1 — a tiny static server for game/ (Node 22, standard library only), so an entry can be played
+// v2.1: rewritten under the new sealed recording; same server as v2.
+// locally without a build step: `node serve.ts` serves game/ on http://localhost:8080
+// (or `node serve.ts --port 8090` for a second instance, e.g. while the checks run).
 // It sends the MIME types a browser game needs, refuses any path outside game/, and otherwise
 // does nothing clever: this is a development convenience, not a web server for the internet.
 import { createReadStream, statSync } from 'node:fs';

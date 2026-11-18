@@ -1,11 +1,18 @@
-// Vice Harbor — screenshot staging.
+// Vice Harbor v2.1 — screenshot staging.
+// v2.1: rewritten under the new sealed recording; same 4 scenes as v2
+// (title, story job at the marina, Harbor Regatta, pause stats).
 // ?shot=<name>&seed=<n> builds a deterministic scene by playing the
 // real game forward a fixed number of steps from a fixed seed, then
 // flags the page ready. Every screenshot is a genuine frame of the
-// game: title screen, police chase, driving, and a mission in progress.
+// game: the title screen, a story job in progress, the Harbor
+// Regatta boat race with live standings, and the pause screen with
+// the career stats and % complete.
 
 import { startMission } from './missions.js';
 import { createCar } from './vehicles.js';
+import { createBoat } from './boats.js';
+import { startRace } from './progression.js';
+import { fillPauseStats } from './hud.js';
 
 // Run the real update loop a fixed number of steps, headless-style.
 export function simulateSteps(G, steps) {
@@ -60,7 +67,7 @@ export function setupShot(G, name) {
     return;
   }
 
-  // The other three shots play the game: hide the menu, show the HUD.
+  // The other shots play the game: hide the menu, show the HUD.
   G.startGame();
   if (name === 'chase') {
     const car = putPlayerInCar(G, 'sports', -120, 0, Math.PI / 2);
@@ -95,6 +102,57 @@ export function setupShot(G, name) {
     G.camPitch = 0.22;
     startMission(G, 0);
     simulateSteps(G, 90);
+  } else if (name === 'race') {
+    // The Harbor Regatta: the player in a Wave Runner on the sea,
+    // racing the three rivals with live standings on the HUD.
+    G.stats.boatUnlocked = true;
+    startRace(G, 'regatta');
+    if (G.player.boat) {
+      G.player.boat.speed = 26;
+      G.shotInput = { forward: true };
+      // Clear the first two gates so the standings read mid-race.
+      if (G.race) {
+        G.race.checkpoint = 1;
+        G.race.rivals[0].progress = 0.45;
+        G.race.rivals[1].progress = 0.3;
+        G.race.rivals[2].progress = 0.22;
+      }
+      simulateSteps(G, 150);
+    }
+  } else if (name === 'stats') {
+    // A career in progress, paused: jobs done, a race won, reels
+    // found, turf owned, crew hired — the pause screen shows it all.
+    G.stats.jobsDone = 3;
+    G.missionsDone = 3;
+    G.missionIndex = 2;
+    G.stats.racesWon = 1;
+    G.stats.racesRun = 2;
+    G.stats.faresDone = 4;
+    G.stats.faresEarned = 240;
+    G.stats.reelsFound = 9;
+    G.stats.copsEscaped = 2;
+    G.stats.distanceDriven = 12400;
+    G.stats.timePlayed = 1840;
+    G.stats.respect = 320;
+    G.stats.turfOwned = ['marina', 'neonrow', 'boardwalk'];
+    G.stats.crew = ['lena'];
+    G.stats.hasPistol = true;
+    G.cash = 1840;
+    const car = putPlayerInCar(G, 'muscle', -40, 56, Math.PI / 2);
+    car.speed = 18;
+    clearTrafficNear(G, 0, 56, 100);
+    clearCorridor(G, 56, -120, 40, 25);
+    G.shotInput = { forward: true };
+    simulateSteps(G, 120);
+    G.shotInput = null;
+    // Pause and fill the stats screen over the live city.
+    G.state = 'paused';
+    fillPauseStats(G);
+    const pause = document.getElementById('screen-pause');
+    if (pause) pause.style.display = 'flex';
+    const hud = document.getElementById('hud');
+    if (hud) hud.style.display = 'none';
+    return;
   }
   G.shotInput = null;
 }
