@@ -1,5 +1,1 @@
-[
-  { "name": "1-start.jpg", "query": "?shot=start&seed=1" },
-  { "name": "2-play.jpg", "query": "?shot=play&seed=1" },
-  { "name": "3-end.jpg", "query": "?shot=end&seed=1" }
-]
+{"shots":[{"file":"1-start.jpg","seed":1,"url":"/?shot=start&seed=1"},{"file":"2-chase.jpg","seed":1,"url":"/?shot=chase&seed=1"},{"file":"3-drive.jpg","seed":1,"url":"/?shot=drive&seed=1"},{"file":"4-mission.jpg","seed":1,"url":"/?shot=mission&seed=1"}]}

@@ -1,53 +1,77 @@
-// Keyboard and pointer input. Held keys give a steering direction; one-shot presses (start or
-// restart, pause) are queued as bit flags and taken once by the loop, so a press between two
-// frames is never lost and never counted twice.
+// Vice Harbor — keyboard and mouse input.
+// Tracks held keys, one-shot presses, and mouse drag deltas for the
+// third-person camera. Pointer lock is requested on click while
+// playing; drag works as a fallback.
 
-export const ACTION_CONFIRM = 1;
-export const ACTION_PAUSE = 2;
-
-const LEFT = new Set(['ArrowLeft', 'KeyA']);
-const RIGHT = new Set(['ArrowRight', 'KeyD']);
-const CONFIRM = new Set(['Space', 'Enter']);
-const PAUSE = new Set(['KeyP', 'Escape']);
-
-export function createInput(target) {
-  let left = false;
-  let right = false;
-  let actions = 0;
-
-  window.addEventListener('keydown', (event) => {
-    if (LEFT.has(event.code)) left = true;
-    else if (RIGHT.has(event.code)) right = true;
-    else if (CONFIRM.has(event.code)) {
-      if (!event.repeat) actions |= ACTION_CONFIRM;
-    } else if (PAUSE.has(event.code)) {
-      if (!event.repeat) actions |= ACTION_PAUSE;
-    } else return;
-    event.preventDefault();
-  });
-  window.addEventListener('keyup', (event) => {
-    if (LEFT.has(event.code)) left = false;
-    else if (RIGHT.has(event.code)) right = false;
-  });
-  // A key released while the tab is hidden never sends keyup: let go of everything on blur.
-  window.addEventListener('blur', () => {
-    left = false;
-    right = false;
-  });
-  target.addEventListener('pointerdown', () => {
-    actions |= ACTION_CONFIRM;
-  });
-
-  return {
-    /** -1 for left, 1 for right, 0 for neither or both. */
-    direction() {
-      return (right ? 1 : 0) - (left ? 1 : 0);
-    },
-    /** The one-shot presses since the last call, as ACTION_* flags. */
-    takeActions() {
-      const taken = actions;
-      actions = 0;
-      return taken;
-    },
+export function createInput() {
+  const input = {
+    keys: {},
+    pressed: {},
+    mouseDX: 0,
+    mouseDY: 0,
+    mouseDown: false,
+    dragging: false,
+    lastX: 0,
+    lastY: 0,
+    locked: false,
   };
+
+  window.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    input.keys[e.code] = true;
+    input.pressed[e.code] = true;
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    input.keys[e.code] = false;
+  });
+  window.addEventListener('blur', () => {
+    input.keys = {};
+  });
+
+  const canvas = document.getElementById('game-canvas');
+  if (canvas) {
+    canvas.addEventListener('mousedown', (e) => {
+      input.mouseDown = true;
+      input.dragging = true;
+      input.lastX = e.clientX;
+      input.lastY = e.clientY;
+      if (document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock?.();
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      input.mouseDown = false;
+      input.dragging = false;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (document.pointerLockElement === canvas) {
+        input.mouseDX += e.movementX || 0;
+        input.mouseDY += e.movementY || 0;
+      } else if (input.dragging) {
+        input.mouseDX += e.clientX - input.lastX;
+        input.mouseDY += e.clientY - input.lastY;
+        input.lastX = e.clientX;
+        input.lastY = e.clientY;
+      }
+    });
+    document.addEventListener('pointerlockchange', () => {
+      input.locked = document.pointerLockElement === canvas;
+    });
+  }
+
+  // One-shot press, consumed by the game loop each frame.
+  input.wasPressed = (code) => {
+    const hit = !!input.pressed[code];
+    input.pressed[code] = false;
+    return hit;
+  };
+  input.endFrame = () => {
+    input.pressed = {};
+    input.mouseDX = 0;
+    input.mouseDY = 0;
+  };
+  return input;
 }
