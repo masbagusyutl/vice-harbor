@@ -1,0 +1,34 @@
+{
+  "seed": 7,
+  "viewport": "1280x720",
+  "shots": [
+    {
+      "file": "1-title.jpg",
+      "scene": "title",
+      "query": "?scene=title&seed=7",
+      "seed": 7,
+      "bytes": 89032
+    },
+    {
+      "file": "2-job.jpg",
+      "scene": "job",
+      "query": "?scene=job&seed=7",
+      "seed": 7,
+      "bytes": 67322
+    },
+    {
+      "file": "3-race.jpg",
+      "scene": "race",
+      "query": "?scene=race&seed=7",
+      "seed": 7,
+      "bytes": 78235
+    },
+    {
+      "file": "4-pause.jpg",
+      "scene": "pause",
+      "query": "?scene=pause&seed=7",
+      "seed": 7,
+      "bytes": 88216
+    }
+  ]
+}

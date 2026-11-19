@@ -1,0 +1,225 @@
+/* Vice Harbor — interface styling. Dark glass panels over a bright 3D city,
+   big readable text, one accent colour for money and objectives. No fonts
+   are fetched: system fonts only, so the game makes zero network requests. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0d1b2a;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #f5f5f0;
+}
+
+#game, #game canvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+}
+
+/* ---------- HUD ---------- */
+#hud { display: none; pointer-events: none; }
+#hud.show { display: block; }
+
+#hudTop {
+  position: fixed;
+  top: 14px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+#healthBar {
+  width: 180px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#healthFill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #2a9d8f, #80b918);
+  transition: width 0.2s;
+}
+#healthText { font-weight: bold; font-size: 15px; }
+#cashText { font-weight: bold; font-size: 20px; color: #ffd60a; }
+#starsText { font-size: 22px; color: #ffd60a; letter-spacing: 2px; }
+
+#objectiveBox {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 8px;
+  padding: 8px 18px;
+  max-width: 560px;
+}
+#objectiveText { font-size: 17px; font-weight: bold; color: #ffd60a; }
+#districtText { font-size: 13px; color: #d8f3dc; margin-top: 2px; }
+#clockText { font-size: 13px; color: #caf0f8; }
+#speedText { font-size: 13px; color: #ffffff; }
+
+#minimap {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  background: #0d1b2a;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.7);
+}
+
+#standingsBox {
+  position: fixed;
+  right: 16px;
+  top: 14px;
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  display: none;
+  min-width: 220px;
+}
+#standingsBox.show { display: block; }
+
+#hintText {
+  position: fixed;
+  left: 16px;
+  bottom: 14px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* ---------- Toasts, dialogue, choices, shop ---------- */
+#toast {
+  position: fixed;
+  bottom: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffd60a;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  max-width: 80%;
+  text-align: center;
+}
+#toast.show { opacity: 1; }
+
+#dialogueBox {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, 86%);
+  background: rgba(10, 10, 24, 0.88);
+  border-left: 5px solid #ffd60a;
+  border-radius: 6px;
+  padding: 14px 18px;
+  font-size: 16px;
+  line-height: 1.5;
+  display: none;
+}
+#dialogueBox.show { display: block; }
+
+#choiceBox, #shopBox {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 90%);
+  background: rgba(10, 10, 24, 0.94);
+  border: 2px solid #ffd60a;
+  border-radius: 10px;
+  padding: 20px 24px;
+  display: none;
+  z-index: 30;
+}
+#choiceBox.show, #shopBox.show { display: block; }
+#choiceBox h2, #shopBox h2 { margin-top: 0; color: #ffd60a; }
+.shopRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 14px;
+}
+
+/* ---------- Full screens ---------- */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(8, 12, 30, 0.88), rgba(20, 20, 40, 0.92));
+  z-index: 20;
+  padding: 24px;
+  overflow-y: auto;
+}
+.screen.show { display: flex; }
+
+.screen h1 {
+  font-size: 64px;
+  letter-spacing: 6px;
+  margin: 0 0 8px 0;
+  color: #ffd60a;
+  text-shadow: 0 4px 0 #b5179e, 0 8px 24px rgba(0, 0, 0, 0.8);
+}
+.tagline { font-size: 19px; color: #caf0f8; margin: 4px 0 12px 0; }
+.premise { font-size: 16px; line-height: 1.55; max-width: 640px; }
+.controls {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 10px 28px;
+  margin: 12px 0;
+  columns: 2;
+  column-gap: 48px;
+}
+.controls p { margin: 5px 0; font-size: 14px; }
+.features { font-size: 15px; color: #ffd60a; font-weight: bold; }
+.tiny { font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+
+.screen button {
+  pointer-events: auto;
+  margin: 8px 6px 0 6px;
+  padding: 14px 30px;
+  font-size: 17px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #111111;
+  background: #ffd60a;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.screen button:hover { background: #ffe45e; }
+#pauseStats, #crewBox { max-width: 640px; text-align: left; font-size: 15px; line-height: 1.6; }
+#crewBox button {
+  padding: 4px 12px;
+  font-size: 13px;
+  margin: 0 0 0 8px;
+}
+#wastedScreen h1 { color: #ef476f; text-shadow: 0 4px 0 #6a040f, 0 8px 24px rgba(0, 0, 0, 0.8); }
+#bustedScreen h1 { color: #4cc9f0; text-shadow: 0 4px 0 #03045e, 0 8px 24px rgba(0, 0, 0, 0.8); }
+#jobTitle { font-size: 44px; }
+#jobBody { font-size: 17px; line-height: 1.6; max-width: 560px; }

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vice Harbor — an open-world harbor city game</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="hudTop">
+    <div id="healthBar"><div id="healthFill"></div></div>
+    <div id="healthText">HP 100</div>
+    <div id="cashText">$250</div>
+    <div id="starsText">☆☆☆☆☆</div>
+  </div>
+  <div id="objectiveBox">
+    <div id="objectiveText">Reach Marina Bay.</div>
+    <div id="districtText">Marina Bay</div>
+    <div id="clockText">18:00 • Dusk</div>
+    <div id="speedText">On foot</div>
+  </div>
+  <canvas id="minimap" width="190" height="190"></canvas>
+  <div id="standingsBox"></div>
+  <div id="hintText">WASD move/drive • E enter car • T taxi • M mute • P pause • Click to shoot</div>
+</div>
+
+<div id="toast"></div>
+<div id="dialogueBox"></div>
+<div id="choiceBox"></div>
+<div id="shopBox"></div>
+
+<!-- Start screen -->
+<div id="startScreen" class="screen show">
+  <h1>VICE HARBOR</h1>
+  <p class="tagline">A sun-soaked harbor city. Seven jobs. One tide to turn.</p>
+  <p class="premise">Rook Vega steps off the boat owing the harbor everything. Fixer Iris Kade
+  has work, Big Ray Deluca owns half the city, and the tide is coming in.
+  Drive, steal, race, and take Vice Harbor back — job by job.</p>
+  <div class="controls">
+    <p>W — move forward / drive</p>
+    <p>S — move back / brake</p>
+    <p>A — move left / steer left</p>
+    <p>D — move right / steer right</p>
+    <p>E — enter or exit a car (steal it!)</p>
+    <p>Space — handbrake</p>
+    <p>Click — shoot your weapon</p>
+    <p>T — start or end a taxi shift</p>
+    <p>Shift — run</p>
+    <p>M — mute sound</p>
+    <p>P or Esc — pause</p>
+    <p>Mouse drag — look around</p>
+  </div>
+  <p class="features">7 story jobs • 3 street races • 24 hidden medallions • 10 districts • 8 vehicles • turf, crew, choices</p>
+  <button id="startBtn">START A NEW GAME</button>
+  <button id="continueBtn">CONTINUE SAVED GAME</button>
+  <p class="tiny">An original game. No Rockstar material. Built with Three.js, offline, no network requests.</p>
+</div>
+
+<!-- Pause screen -->
+<div id="pauseScreen" class="screen">
+  <h1>PAUSED — VICE HARBOR</h1>
+  <div id="pauseStats"></div>
+  <div id="crewBox"></div>
+  <button id="resumeBtn">RESUME</button>
+  <button id="saveBtn">SAVE GAME</button>
+  <button id="quitBtn">SAVE AND RESTART</button>
+  <p class="tiny">Progress saves to this browser automatically every 30 seconds and on every job.</p>
+</div>
+
+<!-- Wasted / busted -->
+<div id="wastedScreen" class="screen">
+  <h1>WASTED</h1>
+  <p id="wastedText"></p>
+  <button id="respawnBtn">WAKE UP AT THE CLINIC (Enter)</button>
+</div>
+<div id="bustedScreen" class="screen">
+  <h1>BUSTED</h1>
+  <p id="bustedText"></p>
+  <button id="bustedRespawnBtn">POST BAIL AND WALK OUT (Enter)</button>
+</div>
+
+<!-- Job complete -->
+<div id="jobScreen" class="screen">
+  <h1 id="jobTitle">JOB COMPLETE</h1>
+  <p id="jobBody"></p>
+  <button id="jobOkBtn">KEEP PLAYING</button>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script type="module" src="src/game.js"></script>
+</body>
+</html>
