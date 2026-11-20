@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VICE HARBOR — an open-world harbor city game</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game"></div>
+
+<!-- ============ HUD ============ -->
+<div id="hud" style="display:none">
+  <div id="topLeft">
+    <div id="healthBar"><div id="healthFill"></div><span id="healthNum">100</span></div>
+    <div id="cashRow"><span id="cashNum">$200</span><span id="rankName">Nobody</span></div>
+    <div id="wantedStars" class="stars w0">☆☆☆☆☆</div>
+    <div id="weaponText">Harbor Pistol</div>
+  </div>
+  <div id="topRight">
+    <div id="clockText">17:30 • Marina Bay</div>
+    <canvas id="minimap" width="180" height="180"></canvas>
+    <div id="carText">On foot</div>
+    <div id="speedText"></div>
+  </div>
+  <div id="objectiveBar"><span id="objectiveText">Press ENTER to start.</span></div>
+  <div id="standings" style="display:none"></div>
+</div>
+<div id="toast" style="opacity:0"></div>
+<div id="flash"></div>
+
+<!-- ============ dialogue + choice ============ -->
+<div id="dialogueBox" style="display:none">
+  <div id="dialogueName"></div>
+  <div id="dialogueText"></div>
+  <div class="dim">E / click — continue</div>
+</div>
+<div id="choiceBox" style="display:none">
+  <div id="choicePrompt"></div>
+  <button id="choiceA" class="menuBtn"></button>
+  <button id="choiceB" class="menuBtn"></button>
+</div>
+
+<!-- ============ start screen ============ -->
+<div id="startScreen" class="screen" style="display:none">
+  <div class="panel">
+    <h1 class="title">VICE HARBOR</h1>
+    <p class="tagline">A golden-hour open-world crime story on the bay.</p>
+    <p class="story">Jules “Jet” Marlow steps off the ferry with nothing but a fast pair of
+    hands and a debt to pay. Marisol Vega, the fixer who runs the harbor, has
+    seven jobs with his name on them — and ten districts, three rival racers,
+    a crew to build and a whole city to take.</p>
+    <div class="controls">
+      <div><b>W A S D</b> — walk / drive</div>
+      <div><b>Shift</b> — run on foot</div>
+      <div><b>E</b> — enter / steal car, exit car, continue</div>
+      <div><b>F / click</b> — shoot</div>
+      <div><b>V</b> — melee</div>
+      <div><b>T</b> — hail a taxi fare</div>
+      <div><b>B</b> — gun shop (near Harbour Arms)</div>
+      <div><b>R</b> — respray (near Dockside, clears heat)</div>
+      <div><b>P / Esc</b> — pause: jobs, races, crew, stats</div>
+      <div><b>M</b> — mute sound</div>
+    </div>
+    <button id="startBtn" class="bigBtn">START ENGINE</button>
+    <button id="continueBtn" class="bigBtn alt" style="display:none">CONTINUE — LOAD SAVE</button>
+    <p class="dim">7 story jobs • 3 street races • 24 hidden lanterns • 10 districts •
+    8 car types + police cars + boats • turf, crew and respect to earn.</p>
+  </div>
+</div>
+
+<!-- ============ pause screen ============ -->
+<div id="pauseScreen" class="screen" style="display:none">
+  <div class="panel wide">
+    <h2>PAUSED — VICE HARBOR</h2>
+    <div id="completeBarWrap"><div id="completeBar"></div></div>
+    <div id="completePct">0% COMPLETE</div>
+    <div id="statsGrid"></div>
+    <h3>Hire crew</h3>
+    <div id="crewList"></div>
+    <h3>Story jobs</h3>
+    <div id="jobList"></div>
+    <h3>Street races</h3>
+    <div id="raceList"></div>
+    <div class="row">
+      <button id="resumeBtn" class="bigBtn">RESUME</button>
+      <button id="saveBtn" class="bigBtn alt">SAVE GAME</button>
+      <button id="quitBtn" class="bigBtn alt">SAVE &amp; RESTART</button>
+    </div>
+    <p id="saveNote" class="dim"></p>
+  </div>
+</div>
+
+<!-- ============ wasted / busted ============ -->
+<div id="wastedScreen" class="screen" style="display:none">
+  <div class="panel">
+    <h1 class="title red">WASTED</h1>
+    <p>The harbor ambulance bills you 10% of your cash. You wake up at Palm Court, patched up and poorer.</p>
+    <button id="wastedBtn" class="bigBtn">GET UP — ENTER TO CONTINUE</button>
+  </div>
+</div>
+<div id="bustedScreen" class="screen" style="display:none">
+  <div class="panel">
+    <h1 class="title blue">BUSTED</h1>
+    <p>The Harbor PD takes 10% of your cash as a fine and drops you at Dockside station. The heat is gone — for now.</p>
+    <button id="bustedBtn" class="bigBtn">WALK FREE — ENTER TO CONTINUE</button>
+  </div>
+</div>
+
+<!-- ============ job / race complete ============ -->
+<div id="completeScreen" class="screen" style="display:none">
+  <div class="panel">
+    <h2 id="completeTitle">JOB COMPLETE</h2>
+    <div id="completeBody"></div>
+    <button class="bigBtn" onclick="document.getElementById('completeScreen').style.display='none'">KEEP PLAYING (E)</button>
+  </div>
+</div>
+<div id="raceScreen" class="screen" style="display:none">
+  <div class="panel">
+    <h2 id="raceTitle">RACE OVER</h2>
+    <div id="raceBody"></div>
+    <button class="bigBtn" onclick="document.getElementById('raceScreen').style.display='none'">KEEP PLAYING (E)</button>
+  </div>
+</div>
+
+<!-- ============ shop ============ -->
+<div id="shopScreen" class="screen" style="display:none">
+  <div class="panel">
+    <h2 id="shopTitle">SHOP</h2>
+    <div id="shopBody"></div>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="src/rng.js"></script>
+<script src="src/data.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/city.js"></script>
+<script src="src/vehicles.js"></script>
+<script src="src/people.js"></script>
+<script src="src/missions.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/game.js"></script>
+</body>
+</html>
